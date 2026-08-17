@@ -25,6 +25,12 @@ _WRITE_ADDITIVE = ToolAnnotations(
     idempotent_hint=False,
     open_world_hint=True,
 )
+_REGISTER = ToolAnnotations(
+    read_only_hint=False,
+    destructive_hint=False,
+    idempotent_hint=True,
+    open_world_hint=False,
+)
 
 
 def _client() -> AgmsgClient:
@@ -47,6 +53,22 @@ def agmsg_list_teams() -> dict[str, Any]:
 )
 def agmsg_list_members(team: str) -> dict[str, Any]:
     return {"status": "ok", "team": team, "members": _client().list_members(team)}
+
+
+@mcp.tool(
+    name="agmsg_register_bridge",
+    description=(
+        "Register the MCP/ChatGPT-side identity in an agmsg team using agmsg's built-in "
+        "non-spawnable agmsg-app type. Run this once for a team before sending as that identity."
+    ),
+    annotations=_REGISTER,
+)
+def agmsg_register_bridge(
+    team: str,
+    agent_name: str = "chatgpt",
+    project: str | None = None,
+) -> dict[str, Any]:
+    return _client().register_bridge(team, agent_name=agent_name, project=project)
 
 
 @mcp.tool(
