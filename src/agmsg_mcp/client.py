@@ -42,8 +42,9 @@ class AgmsgConfig:
 class AgmsgClient:
     """Thin wrapper around agmsg's documented scripts interface.
 
-    Reads go through scripts/api.sh and writes go through scripts/send.sh.
-    The database and team config files are deliberately never read directly.
+    Reads go through scripts/api.sh and writes go through agmsg's documented
+    write scripts. The database and team config files are deliberately never
+    read or written directly.
     """
 
     def __init__(self, config: AgmsgConfig | None = None) -> None:
@@ -102,6 +103,29 @@ class AgmsgClient:
     def list_teams(self) -> list[dict[str, Any]]:
         output = self._run("api.sh", "get", "teams")
         return self._parse_jsonl(output)
+
+    def register_bridge(
+        self,
+        team: str,
+        *,
+        agent_name: str = "chatgpt",
+        project: str | None = None,
+    ) -> dict[str, Any]:
+        """Register the MCP-side identity using agmsg's built-in agmsg-app type."""
+        if not agent_name.strip():
+            raise AgmsgError("agent_name must not be empty")
+        project_path = Path(
+            project or os.getenv("AGMSG_MCP_PROJECT") or os.getcwd()
+        ).expanduser().resolve()
+        output = self._run("join.sh", team, agent_name, "agmsg-app", str(project_path))
+        return {
+            "status": "registered",
+            "team": team,
+            "agent": agent_name,
+            "type": "agmsg-app",
+            "project": str(project_path),
+            "agmsg_output": output,
+        }
 
     def list_members(self, team: str) -> list[dict[str, Any]]:
         output = self._run("api.sh", "get", "teams", team, "members")
