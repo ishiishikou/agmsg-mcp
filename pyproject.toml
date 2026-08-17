@@ -1,0 +1,22 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "agmsg-mcp"
+version = "0.1.0"
+description = "MCP bridge for agmsg cross-agent messaging"
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+  "mcp>=2,<3",
+]
+
+[project.scripts]
+agmsg-mcp = "agmsg_mcp.server:main"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/agmsg_mcp"]
+
+[tool.pytest.ini_options]
+pythonpath = ["src"]
