@@ -8,7 +8,7 @@ from typing import Any
 from mcp.server import MCPServer
 from mcp.types import ToolAnnotations
 
-from .client import AgmsgClient, AgmsgError
+from .client import AgmsgClient
 
 
 mcp = MCPServer("agmsg-mcp")
@@ -31,20 +31,13 @@ def _client() -> AgmsgClient:
     return AgmsgClient()
 
 
-def _tool_error(exc: AgmsgError) -> dict[str, Any]:
-    return {"status": "error", "error": str(exc)}
-
-
 @mcp.tool(
     name="agmsg_list_teams",
     description="List agmsg teams visible to this agmsg installation.",
     annotations=_READ_ONLY,
 )
 def agmsg_list_teams() -> dict[str, Any]:
-    try:
-        return {"status": "ok", "teams": _client().list_teams()}
-    except AgmsgError as exc:
-        return _tool_error(exc)
+    return {"status": "ok", "teams": _client().list_teams()}
 
 
 @mcp.tool(
@@ -53,10 +46,7 @@ def agmsg_list_teams() -> dict[str, Any]:
     annotations=_READ_ONLY,
 )
 def agmsg_list_members(team: str) -> dict[str, Any]:
-    try:
-        return {"status": "ok", "team": team, "members": _client().list_members(team)}
-    except AgmsgError as exc:
-        return _tool_error(exc)
+    return {"status": "ok", "team": team, "members": _client().list_members(team)}
 
 
 @mcp.tool(
@@ -73,11 +63,8 @@ def agmsg_get_messages(
     limit: int = 30,
     before_id: str | None = None,
 ) -> dict[str, Any]:
-    try:
-        messages = _client().get_messages(team, agent=agent, limit=limit, before_id=before_id)
-        return {"status": "ok", "team": team, "messages": messages}
-    except AgmsgError as exc:
-        return _tool_error(exc)
+    messages = _client().get_messages(team, agent=agent, limit=limit, before_id=before_id)
+    return {"status": "ok", "team": team, "messages": messages}
 
 
 @mcp.tool(
@@ -89,10 +76,7 @@ def agmsg_get_messages(
     annotations=_WRITE_ADDITIVE,
 )
 def agmsg_send_message(team: str, from_agent: str, to_agent: str, body: str) -> dict[str, Any]:
-    try:
-        return _client().send_message(team, from_agent, to_agent, body)
-    except AgmsgError as exc:
-        return _tool_error(exc)
+    return _client().send_message(team, from_agent, to_agent, body)
 
 
 @mcp.tool(
@@ -112,18 +96,15 @@ async def agmsg_ask_agent(
     timeout_seconds: float = 90.0,
     poll_interval_seconds: float = 2.0,
 ) -> dict[str, Any]:
-    try:
-        return await asyncio.to_thread(
-            _client().ask_agent,
-            team,
-            from_agent,
-            to_agent,
-            prompt,
-            timeout_seconds=timeout_seconds,
-            poll_interval_seconds=poll_interval_seconds,
-        )
-    except AgmsgError as exc:
-        return _tool_error(exc)
+    return await asyncio.to_thread(
+        _client().ask_agent,
+        team,
+        from_agent,
+        to_agent,
+        prompt,
+        timeout_seconds=timeout_seconds,
+        poll_interval_seconds=poll_interval_seconds,
+    )
 
 
 def main() -> None:
