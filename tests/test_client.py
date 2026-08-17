@@ -23,6 +23,31 @@ class AgmsgClientTests(unittest.TestCase):
             client = self.make_client(root)
             self.assertEqual(client.list_teams(), [{"name": "alpha"}, {"name": "beta"}])
 
+    def test_register_bridge_uses_agmsg_app_type(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            output_file = root / "args.txt"
+            project = root / "project"
+            project.mkdir()
+            script = root / "join.sh"
+            script.write_text(
+                "#!/usr/bin/env bash\n"
+                "printf '%s\\n' \"$@\" > \"$ARGS_OUT\"\n"
+                "printf 'joined\\n'\n",
+                encoding="utf-8",
+            )
+            client = self.make_client(root)
+            with patch.dict("os.environ", {"ARGS_OUT": str(output_file)}):
+                result = client.register_bridge(
+                    "team", agent_name="chatgpt", project=str(project)
+                )
+            self.assertEqual(result["status"], "registered")
+            self.assertEqual(result["type"], "agmsg-app")
+            self.assertEqual(
+                output_file.read_text(encoding="utf-8").splitlines(),
+                ["team", "chatgpt", "agmsg-app", str(project.resolve())],
+            )
+
     def test_send_message_passes_arguments_without_shell_interpolation(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
